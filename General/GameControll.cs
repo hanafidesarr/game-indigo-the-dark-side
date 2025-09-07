@@ -9,7 +9,7 @@ public class GameControll : MonoBehaviour {
 
     [Header("General parameters")]
     [Tooltip("Player controller script here")]
-    public bool m_mobileTouchInput;
+    public bool m_mobileTouchInput = true;
     [HideInInspector]
     public PlayerController player;
     [HideInInspector]
@@ -56,6 +56,12 @@ public class GameControll : MonoBehaviour {
     public GameObject gameWinPanel;
     public Slider volumeSlider;
     public Slider sensitivitySlider;
+
+    public Toggle toggleJoystick;
+    public Toggle toggleTouchpad;
+    public GameObject joystickController;
+    public GameObject touchpadController;
+    public GameObject optionsMenuPanel;
 
     [Header("Tips Settings")]
     [Tooltip("Tips")]
@@ -149,6 +155,37 @@ public class GameControll : MonoBehaviour {
         {
             sensitivitySlider.value = sensitivitySlider.maxValue / 2f;
             player.mouseSensetivity = sensitivitySlider.value;
+        }
+
+
+        if (PlayerPrefs.HasKey("ControllerType"))
+        {
+            int controllerType = PlayerPrefs.GetInt("ControllerType");
+            if (controllerType == 0)
+            {
+                toggleJoystick.isOn = true;
+                toggleTouchpad.isOn = false;
+                joystickController.SetActive(true);
+                touchpadController.SetActive(false);
+                m_mobileTouchInput = true;
+            }
+            else
+            {
+                toggleJoystick.isOn = false;
+                toggleTouchpad.isOn = true;
+                joystickController.SetActive(false);
+                touchpadController.SetActive(true);
+                m_mobileTouchInput = true;
+            }
+        }
+        else
+        {
+            // Default joystick jika belum ada setting
+            toggleJoystick.isOn = true;
+            toggleTouchpad.isOn = false;
+            joystickController.SetActive(true);
+            touchpadController.SetActive(false);
+            m_mobileTouchInput = true;
         }
 
         if (PlayerPrefs.HasKey("EnemyMode"))
@@ -870,6 +907,26 @@ public class GameControll : MonoBehaviour {
         AudioListener.volume = PlayerPrefs.GetFloat("Volume");
         player.mouseSensetivity = PlayerPrefs.GetFloat("Sensitivity");
 
+        // === Save Controller Type ===
+        int controllerType = toggleJoystick.isOn ? 0 : 1;
+        PlayerPrefs.SetInt("ControllerType", controllerType);
+        m_mobileTouchInput = true;
+
+        joystickController.SetActive(controllerType == 0);
+        touchpadController.SetActive(controllerType == 1);
+
+        // === Paksa joystick untuk reset setelah aktif ===
+        if (controllerType == 0)
+        {
+            var js = joystickController.GetComponent<JoystickControll>();
+            if (js != null)
+            {
+                js.enabled = false;  // matikan dulu
+                js.enabled = true;   // nyalakan lagi agar OnEnable() dipanggil ulang
+            }
+        }
     }
+
 }
+
 

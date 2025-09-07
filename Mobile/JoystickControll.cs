@@ -3,46 +3,53 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using UnityStandardAssets.CrossPlatformInput;
 
-public class JoystickControll : MonoBehaviour, IDragHandler,IPointerUpHandler, IPointerDownHandler {
-
-
+public class JoystickControll : MonoBehaviour, IDragHandler, IPointerUpHandler, IPointerDownHandler 
+{
     private Image joystickBorder;
     private Image joystickCircle;
     private Vector2 inputVector;
-    CrossPlatformInputManager.VirtualAxis m_HorizontalVirtualAxis; // Reference to the joystick in the cross platform input
-    CrossPlatformInputManager.VirtualAxis m_VerticalVirtualAxis; // Reference to the joystick in the cross platform input
-    public string horizontalAxisName = "Horizontal"; // The name given to the horizontal axis for the cross platform input
-    public string verticalAxisName = "Vertical"; // The name given to the vertical axis for the cross platform input
+
+    CrossPlatformInputManager.VirtualAxis m_HorizontalVirtualAxis;
+    CrossPlatformInputManager.VirtualAxis m_VerticalVirtualAxis;
+
+    public string horizontalAxisName = "Horizontal";
+    public string verticalAxisName = "Vertical";
 
     void OnEnable()
     {
         CreateVirtualAxes();
     }
 
-
-
     void CreateVirtualAxes()
     {
-        m_VerticalVirtualAxis = new CrossPlatformInputManager.VirtualAxis(verticalAxisName);
-        CrossPlatformInputManager.RegisterVirtualAxis(m_VerticalVirtualAxis);
+        // Cegah duplikasi axis
+        if (CrossPlatformInputManager.AxisExists(horizontalAxisName))
+        {
+            CrossPlatformInputManager.UnRegisterVirtualAxis(horizontalAxisName);
+        }
+        if (CrossPlatformInputManager.AxisExists(verticalAxisName))
+        {
+            CrossPlatformInputManager.UnRegisterVirtualAxis(verticalAxisName);
+        }
 
+        // Daftarkan axis baru
         m_HorizontalVirtualAxis = new CrossPlatformInputManager.VirtualAxis(horizontalAxisName);
         CrossPlatformInputManager.RegisterVirtualAxis(m_HorizontalVirtualAxis);
+
+        m_VerticalVirtualAxis = new CrossPlatformInputManager.VirtualAxis(verticalAxisName);
+        CrossPlatformInputManager.RegisterVirtualAxis(m_VerticalVirtualAxis);
     }
 
     private void Start()
     {
         joystickBorder = GetComponent<Image>();
         joystickCircle = transform.GetChild(0).GetComponent<Image>();
-
-
     }
 
     public virtual void OnPointerDown(PointerEventData stick)
     {
         OnDrag(stick);
     }
-
 
     public virtual void OnPointerUp(PointerEventData stick)
     {
@@ -54,7 +61,8 @@ public class JoystickControll : MonoBehaviour, IDragHandler,IPointerUpHandler, I
     public virtual void OnDrag(PointerEventData stick)
     {
         Vector2 pos;
-        if(RectTransformUtility.ScreenPointToLocalPointInRectangle(joystickBorder.rectTransform,stick.position,stick.pressEventCamera, out pos))
+        if(RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            joystickBorder.rectTransform, stick.position, stick.pressEventCamera, out pos))
         {
             pos.x = (pos.x / joystickBorder.rectTransform.sizeDelta.x);
             pos.y = (pos.y / joystickBorder.rectTransform.sizeDelta.y);
@@ -62,25 +70,23 @@ public class JoystickControll : MonoBehaviour, IDragHandler,IPointerUpHandler, I
             inputVector = new Vector2(pos.x , pos.y );
             inputVector = (inputVector.magnitude > 1.0f) ? inputVector.normalized : inputVector;
 
-            joystickCircle.rectTransform.anchoredPosition = new Vector2(inputVector.x*(joystickBorder.rectTransform.sizeDelta.x/2), inputVector.y * (joystickBorder.rectTransform.sizeDelta.y / 2));
+            joystickCircle.rectTransform.anchoredPosition = 
+                new Vector2(inputVector.x*(joystickBorder.rectTransform.sizeDelta.x/2), 
+                            inputVector.y*(joystickBorder.rectTransform.sizeDelta.y/2));
         }
 
         UpdateAxis(inputVector);
-
     }
 
     private void UpdateAxis(Vector2 axis)
     {
-        m_HorizontalVirtualAxis.Update(axis.x);
-        m_VerticalVirtualAxis.Update(axis.y);
+        if (m_HorizontalVirtualAxis != null) m_HorizontalVirtualAxis.Update(axis.x);
+        if (m_VerticalVirtualAxis != null) m_VerticalVirtualAxis.Update(axis.y);
     }
 
     void OnDisable()
     {
-       
-            m_HorizontalVirtualAxis.Remove();     
-            m_VerticalVirtualAxis.Remove();
-        
+        if (m_HorizontalVirtualAxis != null) m_HorizontalVirtualAxis.Remove();     
+        if (m_VerticalVirtualAxis != null) m_VerticalVirtualAxis.Remove();
     }
-
 }
